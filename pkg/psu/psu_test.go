@@ -35,10 +35,31 @@ func (t *PSUTestSuite) psu() *psu.PSU {
 	t.Require().NotNil(p)
 	return p
 }
+func (t *PSUTestSuite) Test_SetCurrent() {
+
+	expectedWrite := []byte("I1?\r\n")
+	expectedReply := []byte("I1 7.45\r\n")
+
+	r := t.Require()
+	openCall := t.mock.On("Open").Return(nil)
+	setDeadline := t.mock.On("SetDeadline", mock.Anything).Return(nil).NotBefore(openCall)
+	writeCall := t.mock.On("Write", expectedWrite).Return(len(expectedWrite), nil).NotBefore(setDeadline)
+	readCall := t.mock.On("Read", mock.Anything).Return(len(expectedReply), nil).Run(func(args mock.Arguments) {
+		buffer := args.Get(0).([]byte)
+		copy(buffer, expectedReply)
+	}).NotBefore(setDeadline, writeCall)
+	t.mock.On("Close").Return(nil).NotBefore(readCall)
+
+	p := t.psu()
+	v, err := p.SetCurrent(1)
+	r.Equal("7.45", v)
+	r.Nil(err)
+}
+
 func (t *PSUTestSuite) Test_SetVoltage() {
 
 	expectedWrite := []byte("V1?\r\n")
-	expectedReply := []byte("V1 27.45")
+	expectedReply := []byte("V1 27.45\r\n")
 
 	r := t.Require()
 	openCall := t.mock.On("Open").Return(nil)
@@ -59,7 +80,7 @@ func (t *PSUTestSuite) Test_SetVoltage() {
 func (t *PSUTestSuite) Test_ActualVoltage() {
 
 	expectedWrite := []byte("V1O?\r\n")
-	expectedReply := []byte("123.45V")
+	expectedReply := []byte("123.45V\r\n")
 
 	r := t.Require()
 	openCall := t.mock.On("Open").Return(nil)
@@ -73,6 +94,27 @@ func (t *PSUTestSuite) Test_ActualVoltage() {
 
 	p := t.psu()
 	v, err := p.ActualVoltage(1)
+	r.Equal("123.45", v)
+	r.Nil(err)
+}
+
+func (t *PSUTestSuite) Test_ActualCurrent() {
+
+	expectedWrite := []byte("I1O?\r\n")
+	expectedReply := []byte("123.45A\r\n")
+
+	r := t.Require()
+	openCall := t.mock.On("Open").Return(nil)
+	setDeadline := t.mock.On("SetDeadline", mock.Anything).Return(nil).NotBefore(openCall)
+	writeCall := t.mock.On("Write", expectedWrite).Return(len(expectedWrite), nil).NotBefore(setDeadline)
+	readCall := t.mock.On("Read", mock.Anything).Return(len(expectedReply), nil).Run(func(args mock.Arguments) {
+		buffer := args.Get(0).([]byte)
+		copy(buffer, expectedReply)
+	}).NotBefore(setDeadline, writeCall)
+	t.mock.On("Close").Return(nil).NotBefore(readCall)
+
+	p := t.psu()
+	v, err := p.ActualCurrent(1)
 	r.Equal("123.45", v)
 	r.Nil(err)
 }

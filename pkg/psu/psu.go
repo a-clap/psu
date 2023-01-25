@@ -46,6 +46,23 @@ func (p *PSU) verify() error {
 	}
 	return nil
 }
+func (p *PSU) ActualCurrent(section int) (string, error) {
+	av := &actualCurrentType{section: section}
+	reply, err := p.communicate(av)
+	if err != nil {
+		return "", err
+	}
+	return reply[av.Command()], nil
+}
+
+func (p *PSU) SetCurrent(section int) (string, error) {
+	av := &setCurrentType{section: section}
+	reply, err := p.communicate(av)
+	if err != nil {
+		return "", err
+	}
+	return reply[av.Command()], nil
+}
 
 func (p *PSU) ActualVoltage(section int) (string, error) {
 	av := &actualVoltageType{section: section}

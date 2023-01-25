@@ -36,6 +36,44 @@ type setVoltageType struct {
 	section int
 }
 
+type actualCurrentType struct {
+	section int
+}
+
+type setCurrentType struct {
+	section int
+}
+
+func (*setCurrentType) Parse(reply []string) (string, error) {
+	if len(reply) != 2 {
+		return "", ErrUnexpectedLen
+	}
+	return reply[1], nil
+}
+
+func (*setCurrentType) WriteOnly() bool {
+	return false
+}
+
+func (s *setCurrentType) Command() command {
+	return command("I" + strconv.FormatInt(int64(s.section), 10) + "?")
+}
+
+func (*actualCurrentType) Parse(reply []string) (string, error) {
+	if len(reply) != 1 {
+		return "", ErrUnexpectedLen
+	}
+	return strings.TrimSuffix(reply[0], "A"), nil
+}
+
+func (*actualCurrentType) WriteOnly() bool {
+	return false
+}
+
+func (a *actualCurrentType) Command() command {
+	return command("I" + strconv.FormatInt(int64(a.section), 10) + "O?")
+}
+
 func (*setVoltageType) Parse(reply []string) (string, error) {
 	if len(reply) != 2 {
 		return "", ErrUnexpectedLen
