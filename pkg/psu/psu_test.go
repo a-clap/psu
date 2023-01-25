@@ -42,14 +42,14 @@ func (t *PSUTestSuite) Test_ActualVoltage() {
 	expectedReply := []byte("123.45V")
 
 	r := t.Require()
-	t.mock.On("Open").Return(nil)
-	t.mock.On("Close").Return(nil)
-	t.mock.On("SetDeadline", mock.Anything).Return(nil)
-	t.mock.On("Write", expectedWrite).Return(len(expectedWrite), nil)
-	t.mock.On("Read", mock.Anything).Return(len(expectedReply), nil).Run(func(args mock.Arguments) {
+	openCall := t.mock.On("Open").Return(nil)
+	setDeadline := t.mock.On("SetDeadline", mock.Anything).Return(nil).NotBefore(openCall)
+	writeCall := t.mock.On("Write", expectedWrite).Return(len(expectedWrite), nil).NotBefore(setDeadline)
+	readCall := t.mock.On("Read", mock.Anything).Return(len(expectedReply), nil).Run(func(args mock.Arguments) {
 		buffer := args.Get(0).([]byte)
 		copy(buffer, expectedReply)
-	})
+	}).NotBefore(setDeadline, writeCall)
+	t.mock.On("Close").Return(nil).NotBefore(readCall)
 
 	p := t.psu()
 	v, err := p.ActualVoltage(1)

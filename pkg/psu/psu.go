@@ -74,7 +74,7 @@ func (p *PSU) communicate(cmds ...commander) (map[command]string, error) {
 	for _, cmd := range cmds {
 		p.setDeadline()
 		writeCmd := cmd.Command()
-		log.Debug("Writing to Conn ", writeCmd)
+		log.Debug("Writing to Conn: ", writeCmd)
 		if _, err := p.conn.Write([]byte(writeCmd + "\r\n")); err != nil {
 			log.Error("error on Write: ", err)
 			return reply, err
