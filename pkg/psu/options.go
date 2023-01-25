@@ -5,6 +5,11 @@
 
 package psu
 
+import (
+	"go.uber.org/zap/zapcore"
+	"time"
+)
+
 type Option func(*PSU) error
 
 func WithConn(c Conn) Option {
@@ -21,6 +26,30 @@ func WithSocketConn(host, port string) Option {
 			Conn: nil,
 		}
 		psu.conn = s
+		return nil
+	}
+}
+func WithReadWriteDeadline(t time.Duration) Option {
+	return func(psu *PSU) error {
+		psu.deadline = t
+		return nil
+	}
+}
+
+func WithLogger(l Logger) Option {
+	return func(*PSU) error {
+		log = l
+		return nil
+	}
+}
+
+func WithLogLevel(logLvl string) Option {
+	return func(*PSU) error {
+		lvl, err := zapcore.ParseLevel(logLvl)
+		if err != nil {
+			return err
+		}
+		log = NewDefaultZap(lvl)
 		return nil
 	}
 }

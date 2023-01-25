@@ -30,6 +30,33 @@ func (t *PSUTestSuite) SetupTest() {
 	t.mock = new(ConnMock)
 }
 
+func (t *PSUTestSuite) psu() *psu.PSU {
+	p, _ := psu.New(psu.WithConn(t.mock))
+	t.Require().NotNil(p)
+	return p
+}
+
+func (t *PSUTestSuite) Test_ActualVoltage() {
+
+	expectedWrite := []byte("V1O?\r\n")
+	expectedReply := []byte("123.45V")
+
+	r := t.Require()
+	t.mock.On("Open").Return(nil)
+	t.mock.On("Close").Return(nil)
+	t.mock.On("SetDeadline", mock.Anything).Return(nil)
+	t.mock.On("Write", expectedWrite).Return(len(expectedWrite), nil)
+	t.mock.On("Read", mock.Anything).Return(len(expectedReply), nil).Run(func(args mock.Arguments) {
+		buffer := args.Get(0).([]byte)
+		copy(buffer, expectedReply)
+	})
+
+	p := t.psu()
+	v, err := p.ActualVoltage(1)
+	r.Equal("123.45", v)
+	r.Nil(err)
+}
+
 func (t *PSUTestSuite) TestNew() {
 	r := t.Require()
 	{
@@ -43,7 +70,6 @@ func (t *PSUTestSuite) TestNew() {
 		r.NotNil(p)
 		r.Nil(err)
 	}
-
 }
 
 func (c *ConnMock) Open() error {
