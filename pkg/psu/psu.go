@@ -8,6 +8,7 @@ package psu
 import (
 	"errors"
 	"io"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -46,26 +47,27 @@ func (p *PSU) verify() error {
 	}
 	return nil
 }
+
 func (p *PSU) ActualCurrent(section int) (string, error) {
-	av := &actualCurrentType{section: section}
-	reply, err := p.communicate(av)
+	ac := &actualCurrentType{section: p.format(section)}
+	reply, err := p.communicate(ac)
 	if err != nil {
 		return "", err
 	}
-	return reply[av.Command()], nil
+	return reply[ac.Command()], nil
 }
 
 func (p *PSU) SetCurrent(section int) (string, error) {
-	av := &setCurrentType{section: section}
-	reply, err := p.communicate(av)
+	sc := &setCurrentType{section: p.format(section)}
+	reply, err := p.communicate(sc)
 	if err != nil {
 		return "", err
 	}
-	return reply[av.Command()], nil
+	return reply[sc.Command()], nil
 }
 
 func (p *PSU) ActualVoltage(section int) (string, error) {
-	av := &actualVoltageType{section: section}
+	av := &actualVoltageType{section: p.format(section)}
 	reply, err := p.communicate(av)
 	if err != nil {
 		return "", err
@@ -74,12 +76,21 @@ func (p *PSU) ActualVoltage(section int) (string, error) {
 }
 
 func (p *PSU) SetVoltage(section int) (string, error) {
-	av := &setVoltageType{section: section}
-	reply, err := p.communicate(av)
+	sv := &setVoltageType{section: p.format(section)}
+	reply, err := p.communicate(sv)
 	if err != nil {
 		return "", err
 	}
-	return reply[av.Command()], nil
+	return reply[sv.Command()], nil
+}
+
+func (p *PSU) State(section int) (bool, error) {
+	av := &getStateType{section: p.format(section)}
+	reply, err := p.communicate(av)
+	if err != nil {
+		return false, err
+	}
+	return strconv.ParseBool(reply[av.Command()])
 }
 
 func (p *PSU) communicate(cmds ...commander) (map[command]string, error) {
@@ -133,4 +144,8 @@ func (p *PSU) setDeadline() {
 	if err := p.conn.SetDeadline(time.Now().Add(p.deadline)); err != nil {
 		log.Error("Error on setting deadline: ", err)
 	}
+}
+
+func (p *PSU) format(section int) string {
+	return strconv.FormatInt(int64(section), 10)
 }

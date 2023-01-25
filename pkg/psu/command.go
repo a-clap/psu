@@ -7,7 +7,6 @@ package psu
 
 import (
 	"errors"
-	"strconv"
 	"strings"
 )
 
@@ -26,22 +25,44 @@ var (
 var (
 	_ commander = (*actualVoltageType)(nil)
 	_ commander = (*setVoltageType)(nil)
+	_ commander = (*actualCurrentType)(nil)
+	_ commander = (*setCurrentType)(nil)
+	_ commander = (*getStateType)(nil)
 )
 
 type actualVoltageType struct {
-	section int
+	section string
 }
 
 type setVoltageType struct {
-	section int
+	section string
 }
 
 type actualCurrentType struct {
-	section int
+	section string
 }
 
 type setCurrentType struct {
-	section int
+	section string
+}
+
+type getStateType struct {
+	section string
+}
+
+func (*getStateType) Parse(reply []string) (string, error) {
+	if len(reply) != 1 {
+		return "", ErrUnexpectedLen
+	}
+	return reply[0], nil
+}
+
+func (*getStateType) WriteOnly() bool {
+	return false
+}
+
+func (g *getStateType) Command() command {
+	return command("OP" + g.section + "?")
 }
 
 func (*setCurrentType) Parse(reply []string) (string, error) {
@@ -56,7 +77,7 @@ func (*setCurrentType) WriteOnly() bool {
 }
 
 func (s *setCurrentType) Command() command {
-	return command("I" + strconv.FormatInt(int64(s.section), 10) + "?")
+	return command("I" + s.section + "?")
 }
 
 func (*actualCurrentType) Parse(reply []string) (string, error) {
@@ -71,7 +92,7 @@ func (*actualCurrentType) WriteOnly() bool {
 }
 
 func (a *actualCurrentType) Command() command {
-	return command("I" + strconv.FormatInt(int64(a.section), 10) + "O?")
+	return command("I" + a.section + "O?")
 }
 
 func (*setVoltageType) Parse(reply []string) (string, error) {
@@ -86,7 +107,7 @@ func (*setVoltageType) WriteOnly() bool {
 }
 
 func (s *setVoltageType) Command() command {
-	return command("V" + strconv.FormatInt(int64(s.section), 10) + "?")
+	return command("V" + s.section + "?")
 }
 
 func (*actualVoltageType) Parse(reply []string) (string, error) {
@@ -101,5 +122,5 @@ func (*actualVoltageType) WriteOnly() bool {
 }
 
 func (a *actualVoltageType) Command() command {
-	return command("V" + strconv.FormatInt(int64(a.section), 10) + "O?")
+	return command("V" + a.section + "O?")
 }
