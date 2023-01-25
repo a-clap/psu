@@ -56,6 +56,15 @@ func (p *PSU) ActualVoltage(section int) (string, error) {
 	return reply[av.Command()], nil
 }
 
+func (p *PSU) SetVoltage(section int) (string, error) {
+	av := &setVoltageType{section: section}
+	reply, err := p.communicate(av)
+	if err != nil {
+		return "", err
+	}
+	return reply[av.Command()], nil
+}
+
 func (p *PSU) communicate(cmds ...commander) (map[command]string, error) {
 	reply := make(map[command]string)
 

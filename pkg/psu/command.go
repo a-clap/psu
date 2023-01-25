@@ -25,10 +25,30 @@ var (
 
 var (
 	_ commander = (*actualVoltageType)(nil)
+	_ commander = (*setVoltageType)(nil)
 )
 
 type actualVoltageType struct {
 	section int
+}
+
+type setVoltageType struct {
+	section int
+}
+
+func (*setVoltageType) Parse(reply []string) (string, error) {
+	if len(reply) != 2 {
+		return "", ErrUnexpectedLen
+	}
+	return reply[1], nil
+}
+
+func (*setVoltageType) WriteOnly() bool {
+	return false
+}
+
+func (s *setVoltageType) Command() command {
+	return command("V" + strconv.FormatInt(int64(s.section), 10) + "?")
 }
 
 func (*actualVoltageType) Parse(reply []string) (string, error) {
