@@ -28,6 +28,7 @@ var (
 	_ commander = (*actualCurrentType)(nil)
 	_ commander = (*setCurrentType)(nil)
 	_ commander = (*getStateType)(nil)
+	_ commander = (*setStateType)(nil)
 )
 
 type actualVoltageType struct {
@@ -48,6 +49,27 @@ type setCurrentType struct {
 
 type getStateType struct {
 	section string
+}
+
+type setStateType struct {
+	section string
+	value   bool
+}
+
+func (*setStateType) Parse(reply []string) (string, error) {
+	panic("shouldn't be called")
+}
+
+func (*setStateType) WriteOnly() bool {
+	return true
+}
+
+func (s *setStateType) Command() command {
+	value := "1"
+	if !s.value {
+		value = "0"
+	}
+	return command("OP" + s.section + " " + value)
 }
 
 func (*getStateType) Parse(reply []string) (string, error) {

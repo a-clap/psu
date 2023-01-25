@@ -84,13 +84,26 @@ func (p *PSU) SetVoltage(section int) (string, error) {
 	return reply[sv.Command()], nil
 }
 
-func (p *PSU) State(section int) (bool, error) {
-	av := &getStateType{section: p.format(section)}
-	reply, err := p.communicate(av)
+func (p *PSU) SetState(section int, value bool) (bool, error) {
+	cmds := []commander{
+		&setStateType{section: p.format(section), value: value},
+		&getStateType{section: p.format(section)},
+	}
+
+	reply, err := p.communicate(cmds...)
 	if err != nil {
 		return false, err
 	}
-	return strconv.ParseBool(reply[av.Command()])
+	return strconv.ParseBool(reply[cmds[1].Command()])
+}
+
+func (p *PSU) State(section int) (bool, error) {
+	gs := &getStateType{section: p.format(section)}
+	reply, err := p.communicate(gs)
+	if err != nil {
+		return false, err
+	}
+	return strconv.ParseBool(reply[gs.Command()])
 }
 
 func (p *PSU) communicate(cmds ...commander) (map[command]string, error) {

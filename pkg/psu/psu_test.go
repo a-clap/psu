@@ -35,6 +35,31 @@ func (t *PSUTestSuite) psu() *psu.PSU {
 	t.Require().NotNil(p)
 	return p
 }
+
+func (t *PSUTestSuite) Test_SetState() {
+
+	firstWrite := []byte("OP1 1\r\n")
+	secondWrite := []byte("OP1?\r\n")
+	expectedReply := []byte("1\r\n")
+
+	r := t.Require()
+	openCall := t.mock.On("Open").Return(nil)
+	setDeadline := t.mock.On("SetDeadline", mock.Anything).Return(nil).NotBefore(openCall)
+	firstWriteCall := t.mock.On("Write", firstWrite).Return(len(firstWrite), nil).NotBefore(setDeadline)
+	secondWriteCall := t.mock.On("Write", secondWrite).Return(len(secondWrite), nil).NotBefore(firstWriteCall)
+
+	readCall := t.mock.On("Read", mock.Anything).Return(len(expectedReply), nil).Run(func(args mock.Arguments) {
+		buffer := args.Get(0).([]byte)
+		copy(buffer, expectedReply)
+	}).NotBefore(setDeadline, secondWriteCall)
+	t.mock.On("Close").Return(nil).NotBefore(readCall)
+
+	p := t.psu()
+	v, err := p.SetState(1, true)
+	r.Equal(true, v)
+	r.Nil(err)
+}
+
 func (t *PSUTestSuite) Test_GetState() {
 
 	expectedWrite := []byte("OP1?\r\n")
