@@ -36,6 +36,63 @@ func (t *PSUTestSuite) psu() *psu.PSU {
 	return p
 }
 
+func (t *PSUTestSuite) Test_Section() {
+	t.mock.On("Open").Return(nil)
+	t.mock.On("SetDeadline", mock.Anything).Return(nil)
+	t.mock.On("Close").Return(nil)
+	args := []struct {
+		write, reply []byte
+	}{
+		{
+			write: []byte("V1O?\r\n"),
+			reply: []byte("21.45V\r\n"),
+		},
+		{
+			write: []byte("V1?\r\n"),
+			reply: []byte("V1 27.45\r\n"),
+		},
+		{
+			write: []byte("I1O?\r\n"),
+			reply: []byte("123.45A\r\n"),
+		},
+		{
+			write: []byte("I1?\r\n"),
+			reply: []byte("I1 7.45\r\n"),
+		},
+		{
+			write: []byte("OP1?\r\n"),
+			reply: []byte("1\r\n"),
+		},
+	}
+	// That is crazy :D, however works pretty well
+	// After specific Write call we add exactly right Read reply
+	fn := func(buf []byte) func(arguments mock.Arguments) {
+		return func(args mock.Arguments) {
+			t.mock.On("Read", mock.Anything).Return(len(buf), nil).Once().Run(func(args mock.Arguments) {
+				buffer := args.Get(0).([]byte)
+				copy(buffer, buf)
+			})
+		}
+	}
+	for _, arg := range args {
+		t.mock.On("Write", arg.write).Return(len(arg.write), nil).Once().Run(fn(arg.reply))
+	}
+
+	s := &psu.Section{
+		State:         true,
+		ActualVoltage: "21.45",
+		SetVoltage:    "27.45",
+		ActualCurrent: "123.45",
+		SetCurrent:    "7.45",
+	}
+
+	r := t.Require()
+	p := t.psu()
+	v, err := p.Section(1)
+	r.EqualValues(s, v)
+	r.Nil(err)
+}
+
 func (t *PSUTestSuite) Test_SetState() {
 
 	firstWrite := []byte("OP1 1\r\n")

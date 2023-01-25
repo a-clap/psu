@@ -24,6 +24,12 @@ type PSU struct {
 	deadline time.Duration
 }
 
+type Section struct {
+	State                     bool
+	ActualVoltage, SetVoltage string
+	ActualCurrent, SetCurrent string
+}
+
 var (
 	ErrNoConnInterface = errors.New("lack of Conn interface")
 )
@@ -41,11 +47,47 @@ func New(options ...Option) (*PSU, error) {
 	return p, nil
 }
 
-func (p *PSU) verify() error {
-	if p.conn == nil {
-		return ErrNoConnInterface
+func (p *PSU) Section(section int) (*Section, error) {
+	sectStr := p.format(section)
+
+	getState := &getStateType{section: sectStr}
+	actualVoltage := &actualVoltageType{section: sectStr}
+	setVoltage := &setVoltageType{section: sectStr}
+	actualCurrent := &actualCurrentType{section: sectStr}
+	setCurrent := &setCurrentType{section: sectStr}
+
+	cmds := []commander{
+		getState,
+		actualVoltage,
+		setVoltage,
+		actualCurrent,
+		setCurrent,
 	}
-	return nil
+	reply, err := p.communicate(cmds...)
+	if err != nil {
+		return nil, err
+	}
+	s := &Section{}
+	for key, value := range reply {
+		switch key {
+		case getState.Command():
+			if s.State, err = strconv.ParseBool(value); err != nil {
+				log.Error("error on parsing state: ", err)
+			}
+		case actualVoltage.Command():
+			s.ActualVoltage = value
+		case setVoltage.Command():
+			s.SetVoltage = value
+		case actualCurrent.Command():
+			s.ActualCurrent = value
+		case setCurrent.Command():
+			s.SetCurrent = value
+		default:
+			log.Error("unknown key ", string(key))
+		}
+	}
+
+	return s, nil
 }
 
 func (p *PSU) ActualCurrent(section int) (string, error) {
@@ -161,4 +203,11 @@ func (p *PSU) setDeadline() {
 
 func (p *PSU) format(section int) string {
 	return strconv.FormatInt(int64(section), 10)
+}
+
+func (p *PSU) verify() error {
+	if p.conn == nil {
+		return ErrNoConnInterface
+	}
+	return nil
 }
