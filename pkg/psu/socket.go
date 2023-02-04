@@ -7,6 +7,7 @@ package psu
 
 import (
 	"net"
+	"time"
 )
 
 type socket struct {
@@ -15,6 +16,6 @@ type socket struct {
 }
 
 func (s *socket) Open() (err error) {
-	s.Conn, err = net.Dial("tcp", s.addr)
+	s.Conn, err = net.DialTimeout("tcp", s.addr, 1*time.Second)
 	return err
 }
