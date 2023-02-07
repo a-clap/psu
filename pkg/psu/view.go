@@ -39,6 +39,11 @@ type Access interface {
 	SetState(section int, value bool) (bool, error)
 }
 
+var (
+	ErrNoAccess  = errors.New("no Access interface")
+	ErrNoSection = errors.New("no section to handle")
+)
+
 func NewView(opts ...ViewOption) (*View, error) {
 	v := &View{
 		psu:           nil,
@@ -133,6 +138,7 @@ func (v *View) refresh() {
 func newViewSection(number int, access Access) *viewSection {
 	section := strconv.FormatInt(int64(number), 32)
 	v := &viewSection{
+		section: number,
 		psu:     access,
 		number:  widget.NewLabelWithStyle(section, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		voltage: widget.NewLabelWithStyle("0/8", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
@@ -174,10 +180,10 @@ func (vs *viewSection) refresh() {
 
 func (v *View) verify() error {
 	if v.psu == nil {
-		return errors.New("no Access interface")
+		return ErrNoAccess
 	}
 	if len(v.sectionNumbers) == 0 {
-		return errors.New("no section to handle")
+		return ErrNoSection
 	}
 	return nil
 }
