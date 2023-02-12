@@ -1,0 +1,46 @@
+= CPX400DP
+:toc: left
+:toclevels: 3
+
+
+Use CPX400DP with GUI.
+
+== About
+
+It is a GUI tool for operating (via socket) on CPX400DP PSU.
+
+== Quick Start
+
+. Use Makefile to build application.
+. Modify config.json as needed.
+. Run application.
+
+[%autowidth, cols="a,a", frame=none, grid=none, role="center"]]
+|===
+| image::docs/1.png[]
+| image::docs/2.png[]
+|===
+
+== Usage
+
+It allows to:
+
+* set/reset independently each output
+* read actual value and set-point of voltage
+* read actual value and set-point of current
+
+You can't set voltage and/or current via this tool. I found it dangerous to control such parameters without knowing what is on the other side of psu output.
+
+== Configuration
+
+It supports simple configuration via `config.json`, nothing need to be explained here.
+[source, json]
+----
+{
+    "host": "192.168.212.121",
+    "port": "9221",
+    "sections": [0, 1]
+}
+----
+
+
