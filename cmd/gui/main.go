@@ -7,14 +7,15 @@ package main
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
+	"time"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
-	"os"
-	"path/filepath"
 	"psu/pkg/psu"
-	"time"
 )
 
 type config struct {
@@ -39,7 +40,10 @@ func main() {
 		panic(err)
 	}
 
-	p, err := psu.New(psu.WithSocketConn(cfg.Host, cfg.Port))
+	p, err := psu.New(
+		psu.WithSocketConn(cfg.Host, cfg.Port),
+		psu.WithReadWriteDeadline(100*time.Millisecond),
+		psu.WithRetries(3))
 	if err != nil {
 		panic(err)
 	}

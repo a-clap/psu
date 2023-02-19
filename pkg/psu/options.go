@@ -54,3 +54,10 @@ func WithLogLevel(logLvl string) Option {
 		return nil
 	}
 }
+
+func WithRetries(retries int) Option {
+	return func(psu *PSU) error {
+		psu.retries = retries
+		return nil
+	}
+}

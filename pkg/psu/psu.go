@@ -22,6 +22,7 @@ type Conn interface {
 type PSU struct {
 	conn     Conn
 	deadline time.Duration
+	retries  int
 }
 
 type Section struct {
@@ -38,6 +39,7 @@ func New(options ...Option) (*PSU, error) {
 	p := &PSU{
 		conn:     nil,
 		deadline: 100 * time.Millisecond,
+		retries:  0,
 	}
 	for _, option := range options {
 		if err := option(p); err != nil {
@@ -152,13 +154,19 @@ func (p *PSU) State(section int) (bool, error) {
 }
 
 func (p *PSU) communicate(cmds ...commander) (map[command]string, error) {
-	reply := make(map[command]string)
+	var err error
+	for i := 0; i <= p.retries; i++ {
+		log.Debug("Connecting ...")
+		if err = p.conn.Open(); err == nil {
+			break
+		}
+	}
 
-	log.Debug("Connecting ...")
-	if err := p.conn.Open(); err != nil {
+	if err != nil {
 		log.Error("Failed to connect: ", err)
 		return nil, err
 	}
+
 	defer func() {
 		log.Debug("Disconnecting...")
 		if err := p.conn.Close(); err != nil {
@@ -166,6 +174,7 @@ func (p *PSU) communicate(cmds ...commander) (map[command]string, error) {
 		}
 	}()
 
+	reply := make(map[command]string)
 	for _, cmd := range cmds {
 		p.setDeadline()
 		writeCmd := cmd.Command()
