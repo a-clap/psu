@@ -6,8 +6,9 @@
 package psu
 
 import (
-	"go.uber.org/zap/zapcore"
 	"time"
+
+	"go.uber.org/zap/zapcore"
 )
 
 type Option func(*PSU) error

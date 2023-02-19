@@ -35,7 +35,10 @@ var (
 )
 
 func New(options ...Option) (*PSU, error) {
-	p := new(PSU)
+	p := &PSU{
+		conn:     nil,
+		deadline: 100 * time.Millisecond,
+	}
 	for _, option := range options {
 		if err := option(p); err != nil {
 			return nil, err
