@@ -7,13 +7,14 @@ package psu
 
 import (
 	"errors"
+	"strconv"
+	"time"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"strconv"
-	"time"
 )
 
 type View struct {
@@ -172,7 +173,7 @@ func (vs *viewSection) refresh() {
 		vs.enable.Icon = theme.MediaStopIcon()
 		vs.enable.SetText("OFF")
 	} else {
-		vs.enable.Icon = theme.MediaStopIcon()
+		vs.enable.Icon = theme.MediaPlayIcon()
 		vs.enable.SetText("ON")
 	}
 
